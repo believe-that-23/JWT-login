@@ -1,9 +1,63 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios'
 
 function Login() {
     const lottieURL = 'https://assets9.lottiefiles.com/packages/lf20_jcikwtux.json';
-    const loginSubmit = () => {
+
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const navigate = useNavigate();
+
+    const loginSubmit = (e) => {
+        e.preventDefault();
+        const userData = {
+            email, password
+        }
+
+        try {
+            axios.post('/auth/login', userData)
+                .then(log => {
+                    if (log.data.success) {
+                        toast.success(log.data.msg, {
+                            position: "top-right",
+                            autoClose: 5000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                        });
+                        localStorage.setItem('data', JSON.stringify(log.data.token));
+                        navigate('/dashboard')
+                    } else {
+                        toast.error(log.data.msg, {
+                            position: "top-right",
+                            autoClose: 5000,
+                            hideProgressBar: false,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                            progress: undefined,
+                            theme: "light",
+                        });
+                    }
+                })
+        } catch (error) {
+            toast.error(error, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+            });
+        }
 
     }
     return (
@@ -20,11 +74,11 @@ function Login() {
                     <form onSubmit={loginSubmit}>
                         <div className='form-group m-2'>
                             <h5>Email Address</h5>
-                            <input autoFocus type="email" className='form-control' placeholder='enter mail' required />
+                            <input autoFocus value={email} onChange={(e) => setEmail(e.target.value)} type="email" className='form-control' placeholder='enter mail' required />
                         </div>
                         <div className='form-group m-2'>
                             <h5>Password</h5>
-                            <input type="password" className='form-control' placeholder='enter password' required />
+                            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className='form-control' placeholder='enter password' required />
                         </div>
                         <div className='text-center'>
                             <button type='submit' className='m-5 submit-btn'>Submit</button>
@@ -33,6 +87,7 @@ function Login() {
                     <Link className='text-primary text-center my-3' to="/register">Not Registered? Click here</Link>
                 </div>
             </div>
+            <ToastContainer />
         </div>
     )
 }
