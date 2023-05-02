@@ -3,6 +3,7 @@ import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Verifyemail from './pages/Verifyemail';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path='/' element={<PublicRoutes><Login /></PublicRoutes>} />
           <Route path='/register' element={<PublicRoutes><Register /></PublicRoutes>} />
           <Route path='/dashboard' element={<ProtectedRoutes><Dashboard /></ProtectedRoutes>} />
+          <Route path='/verify/:token' element={<PublicRoutes><Verifyemail /></PublicRoutes>} />
         </Routes>
       </Router>
     </div>

@@ -1,6 +1,8 @@
 const User = require('../models/userModel')
+const Token = require('../models/tokenModel')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
+const mailSender = require('../config/mailSender')
 
 
 const registerUser = async (req, res) => {
@@ -21,7 +23,8 @@ const registerUser = async (req, res) => {
             });
             // const newEntry = new User(req.body);
             // newEntry.save();
-            return res.status(200).send({ success: true, msg: "Registration Successful" });
+            await mailSender(newEntry, 'verify-mail');
+            return res.status(200).send({ success: true, msg: "Registration Successful and verification mail sent to your mail" });
         } catch (error) {
             return res.status(400).send({ success: false, msg: error })
         }
@@ -34,13 +37,17 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
         if (user) {
             if (user && (await bcrypt.compare(password, user.password))) {
-                const tokenData = {
-                    _id: user._id,
-                    user: user.user,
-                    email: user.email
+                if (user.isVerified) {
+                    const tokenData = {
+                        _id: user._id,
+                        user: user.user,
+                        email: user.email
+                    }
+                    const token = jwt.sign(tokenData, process.env.JWT_KEY, { expiresIn: '30d' });
+                    return res.status(200).send({ success: true, msg: "Login Successful", token: token });
+                } else {
+                    return res.send({success: false, msg: "email not verified, Please check your mail.."})
                 }
-                const token = jwt.sign(tokenData, "Secretkey123", { expiresIn: '30d' });
-                return res.status(200).send({ success: true, msg: "Login Successful", token: token });
             } else {
                 return res.send({ success: false, msg: "invalid credentials" })
             }
@@ -73,13 +80,27 @@ const updateUser = async (req, res) => {
             email: updateUser.email,
             password: hashedPassword
         });
-        return res.status(200).send({success: true, msg: "password updated"})
+        return res.status(200).send({ success: true, msg: "password updated" })
     } else {
         return res.send({ msg: "No user or something went wrong." })
     }
 }
 
+const verifyMail = async (req, res) => {
+    try {
+        const tokenDetail = await Token.findOne({ token: req.body.token })
+        if (tokenDetail) {
+            await User.findOneAndUpdate({ _id: tokenDetail.userid, isVerified: true })
+            await Token.findOneAndDelete({ token: req.body.token })
+
+            res.send({ success: true, msg: "email verified successfully" });
+        }
+    } catch (error) {
+        res.send({ success: false, msg: "Invalid token" })
+    }
+}
+
 module.exports = {
-    registerUser, loginUser, userData, updateUser
+    registerUser, loginUser, userData, updateUser, verifyMail
 }
 
